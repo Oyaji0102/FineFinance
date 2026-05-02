@@ -13,3 +13,5 @@ Pillow
 google-generativeai
 python-pptx
 alembic
+email-validator
+greenlet
