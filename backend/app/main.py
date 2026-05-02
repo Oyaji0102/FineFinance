@@ -1,3 +1,9 @@
+import sys, os
+# AI_core modülünün (proje kökünde /FineFinance) backend içinden görünmesi için
+_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
