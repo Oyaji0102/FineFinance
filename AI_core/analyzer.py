@@ -4,7 +4,7 @@ from openai import AsyncOpenAI
 from AI_core.prompts import FINANCIAL_ANALYSIS_PROMPT, PPTX_SUMMARY_PROMPT, CONSOLIDATED_ANALYSIS_PROMPT
 
 # OpenAI client initialize
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = AsyncOpenAI(api_key=os.getenv("GEMINI_API_KEY"), base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
 
 async def generate_financial_analysis(financial_data: dict, is_premium: bool = False) -> dict:
     """
@@ -31,7 +31,7 @@ async def generate_financial_analysis(financial_data: dict, is_premium: bool = F
             prompt += "\n\nDİKKAT: is_premium durumu Pasif. 'recommendations' kısmında sadece standart temel öneriler ver. Derin analizden kaçın."
 
         response = await client.chat.completions.create(
-            model="gpt-4o",
+            model="gemini-1.5-flash",
             response_format={ "type": "json_object" },
             messages=[
                 {"role": "system", "content": prompt}
@@ -62,7 +62,7 @@ async def generate_pptx_summary(financial_data: dict) -> str:
         prompt = PPTX_SUMMARY_PROMPT.replace("{financial_data}", data_str)
         
         response = await client.chat.completions.create(
-            model="gpt-4o",
+            model="gemini-1.5-flash",
             messages=[
                 {"role": "system", "content": prompt}
             ],
@@ -86,7 +86,7 @@ async def generate_consolidated_analysis(holding_data: dict) -> dict:
         prompt = CONSOLIDATED_ANALYSIS_PROMPT.replace("{holding_data}", data_str)
         
         response = await client.chat.completions.create(
-            model="gpt-4o",
+            model="gemini-1.5-flash",
             response_format={ "type": "json_object" },
             messages=[
                 {"role": "system", "content": prompt}

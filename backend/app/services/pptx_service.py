@@ -16,7 +16,7 @@ def _add_title_and_text(slide, title_text, bullet_points):
         p.level = 0
         p.font.size = Pt(18)
 
-def create_firm_presentation(firm_data: dict, ai_analysis: dict) -> bytes:
+def create_firm_presentation(firm_data: dict, ai_analysis: dict, ai_summary: str = "Özet bulunamadı.") -> bytes:
     prs = Presentation()
     primary_color = RGBColor(0, 51, 102) 
     
@@ -30,7 +30,8 @@ def create_firm_presentation(firm_data: dict, ai_analysis: dict) -> bytes:
     
     # 2. AI KISA YORUM / ÖZET SLAYT (İstenen 5. Madde)
     slide2 = prs.slides.add_slide(prs.slide_layouts[1])
-    _add_title_and_text(slide2, "1. AI Finansal Yönetici Özeti", ai_analysis.get("summary", ["Özet bulunamadı."]))
+    # ai_summary düz metin olduğu için tek elemanlı bir liste olarak veriyoruz
+    _add_title_and_text(slide2, "1. AI Finansal Yönetici Özeti", [ai_summary])
     
     # 3. TEMEL MALİ VERİLER (İstenen 1. Madde)
     slide3 = prs.slides.add_slide(prs.slide_layouts[5])

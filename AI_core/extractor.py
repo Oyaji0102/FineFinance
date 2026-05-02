@@ -6,7 +6,7 @@ from AI_core.prompts import EXTRACT_FIRM_PROMPT
 
 # OpenAI client initialize edilir.
 # Not: Sistem ortamında OPENAI_API_KEY bulunmalıdır. Hackathon ortamında .env ile yönetin.
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = AsyncOpenAI(api_key=os.getenv("GEMINI_API_KEY"), base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
 
 async def parse_firm_document(file_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
     """
@@ -21,7 +21,7 @@ async def parse_firm_document(file_bytes: bytes, mime_type: str = "image/jpeg") 
         
         # GPT-4o'nun JSON Mode özelliğini kullanarak kesin JSON garantisi alıyoruz
         response = await client.chat.completions.create(
-            model="gpt-4o",
+            model="gemini-1.5-flash",
             response_format={ "type": "json_object" },
             messages=[
                 {
@@ -62,7 +62,7 @@ async def parse_firm_text(ocr_text: str) -> dict:
     """
     try:
         response = await client.chat.completions.create(
-            model="gpt-4o",
+            model="gemini-1.5-flash",
             response_format={ "type": "json_object" },
             messages=[
                 {

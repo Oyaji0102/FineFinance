@@ -1,8 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Header
 from fastapi.responses import Response
 from pydantic import BaseModel
-from app.services.ocr_service import extract_text_from_image
-from app.services.ai_service import parse_firm_data_from_text, generate_financial_analysis
+from AI_core.extractor import parse_firm_document, parse_firm_text
+from AI_core.analyzer import generate_financial_analysis, generate_consolidated_analysis, generate_pptx_summary
 from app.services.pptx_service import create_firm_presentation
 from app.services.scoring_service import calculate_financial_score
 from app.api.deps import get_current_active_user
@@ -32,15 +32,14 @@ async def parse_document(
         
     image_bytes = await file.read()
     
-    # 1. OCR İşlemi
-    ocr_text = await extract_text_from_image(image_bytes)
+    # 1. Yeni Sistem: Görüntüyü OCR yapmadan DOĞRUDAN Gemini Vision modeline (AI_core) gönder
+    parsed_data = await parse_firm_document(image_bytes, mime_type=file.content_type)
     
-    if not ocr_text.strip():
-        err_msg = "Could not extract text from the image." if is_english else "Görselden metin okunamadı."
+    if not parsed_data:
+        err_msg = "Could not extract data from the image." if is_english else "Görselden anlamlı veri okunamadı."
         raise HTTPException(status_code=400, detail=err_msg)
-         
-    # 2. AI Parse İşlemi
-    parsed_data = await parse_firm_data_from_text(ocr_text)
+        
+    ocr_text = "Belge OCR yerine doğrudan Vision (Görsel İşleme) modeli ile analiz edildi."
     
     msg_success = "Document successfully parsed." if is_english else "Belge başarıyla okundu."
     
@@ -72,8 +71,8 @@ async def create_financial_report(
         err_msg = "AI Analysis and Expert Opinion require Premium subscription." if is_english else "Uzman Görüşü ve Yapay Zeka Analizi premium özelliklerdir. Lütfen paketinizi yükseltin."
         raise HTTPException(status_code=403, detail=err_msg)
 
-    # 1. AI ile analiz üret
-    analysis_report = await generate_financial_analysis(request.financial_data)
+    # 1. AI ile analiz üret (AI_core üzerinden premium parametresiyle)
+    analysis_report = await generate_financial_analysis(request.financial_data, is_premium=current_user.is_premium_active)
     
     msg_success = "Report generated successfully." if is_english else "Analiz raporu başarıyla oluşturuldu."
     
@@ -91,11 +90,12 @@ async def generate_presentation(
     """
     T5: Firmanın mali verileri ve AI özeti kullanılarak .pptx dosyası üretilir ve indirilir.
     """
-    # 1. AI ile taze bir analiz raporu çek
-    analysis_report = await generate_financial_analysis(request.financial_data)
+    # 1. AI ile taze bir analiz raporu ve PPTX özeti çek (AI_core)
+    analysis_report = await generate_financial_analysis(request.financial_data, is_premium=current_user.is_premium_active)
+    pptx_summary = await generate_pptx_summary(request.financial_data)
     
     # 2. Python-pptx ile PowerPoint sunumunu byte olarak oluştur
-    pptx_bytes = create_firm_presentation(request.financial_data, analysis_report)
+    pptx_bytes = create_firm_presentation(request.financial_data, analysis_report, pptx_summary)
     
     # 3. İstemcinin dosyayı indirebilmesi için Header'ları ayarla
     headers = {
@@ -159,12 +159,8 @@ async def generate_consolidated_report(
         "activities": list(set([firm.field_of_activity for firm in firms if firm.field_of_activity]))
     }
     
-    # Gerçek projede bu konsolide veriler Yapay Zekaya (Gemini) gönderilir
-    consolidated_analysis = {
-        "summary": f"{len(firms)} farklı şirketten oluşan bu holdingin toplam cirosu {total_revenue} TL'dir.",
-        "synergy_potential": "Şirketler arası maliyet düşürme ve çapraz satış fırsatları yüksek.",
-        "risk": "Farklı sektörlerde faaliyet gösterilmesi riski dağıtsa da operasyonel karmaşayı artırabilir."
-    }
+    # AI_core ile konsolide analizi üret
+    consolidated_analysis = await generate_consolidated_analysis(consolidated_data)
     
     return {
         "success": True,

@@ -4,7 +4,7 @@ import asyncio
 from openai import AsyncOpenAI
 from AI_core.prompts import MOCK_FIRM_DATA_PROMPT
 
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = AsyncOpenAI(api_key=os.getenv("GEMINI_API_KEY"), base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
 
 async def generate_mock_firm(sector: str, size: str) -> dict:
     """
@@ -15,7 +15,7 @@ async def generate_mock_firm(sector: str, size: str) -> dict:
         prompt = MOCK_FIRM_DATA_PROMPT.replace("{sector}", sector).replace("{size}", size)
         
         response = await client.chat.completions.create(
-            model="gpt-4o",
+            model="gemini-1.5-flash",
             response_format={ "type": "json_object" },
             messages=[
                 {"role": "system", "content": prompt}
