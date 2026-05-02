@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+aiosqlite
+pydantic
+pydantic-settings
+python-multipart
+passlib[bcrypt]
+python-jose[cryptography]
+python-dotenv
+pytesseract
+Pillow
+google-generativeai
+python-pptx
+alembic
+email-validator
+greenlet

@@ -1,0 +1,7 @@
+{
+  "python.analysis.extraPaths": [
+    "./server",
+    "./server/backend"
+  ],
+  "python.defaultInterpreterPath": "C:\\Users\\Arslan\\Desktop\\git\\FineFin\\server\\backend\\venv\\Scripts\\python.exe"
+}
