@@ -1,4 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
+import io
+import csv
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
@@ -89,3 +92,36 @@ async def delete_firm(
     await db.delete(db_firm)
     await db.commit()
     return None
+
+@router.get("/export/csv")
+async def export_firms_csv(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    O6 Bonus: Veritabanındaki tüm firmaları CSV formatında dışa aktarır (Excel destekli).
+    """
+    result = await db.execute(select(Firm))
+    firms = result.scalars().all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Firma ID", "Firma Adi", "Vergi Numarasi", "Faaliyet Alani", "Tahmini Ciro (TL)", "Durum"])
+    
+    for firm in firms:
+        writer.writerow([
+            firm.id,
+            firm.name,
+            firm.tax_number,
+            firm.field_of_activity if firm.field_of_activity else "Belirtilmedi",
+            firm.estimated_revenue if firm.estimated_revenue else "0",
+            "Onaylandi" if firm.is_approved else "Beklemede"
+        ])
+        
+    output.seek(0)
+    
+    headers = {
+        'Content-Disposition': 'attachment; filename="FineFinance_Firma_Raporu.csv"'
+    }
+    
+    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers=headers)

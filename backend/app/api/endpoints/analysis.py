@@ -4,7 +4,12 @@ from pydantic import BaseModel
 from app.services.ocr_service import extract_text_from_image
 from app.services.ai_service import parse_firm_data_from_text, generate_financial_analysis
 from app.services.pptx_service import create_firm_presentation
+from app.services.scoring_service import calculate_financial_score
 from app.api.deps import get_current_active_user
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from app.db.database import get_db
+from app.models.firm import Firm
 
 router = APIRouter()
 
@@ -102,3 +107,67 @@ async def generate_presentation(
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", 
         headers=headers
     )
+
+class ScoreRequest(BaseModel):
+    financial_data: dict
+
+@router.post("/score")
+async def get_financial_score(
+    request: ScoreRequest,
+    current_user = Depends(get_current_active_user)
+):
+    """
+    O4 Bonus: Girilen finansal oranlara (ratios) göre otomatik Risk ve Sağlık skoru hesaplar (1-100).
+    """
+    result = calculate_financial_score(request.financial_data)
+    
+    return {
+        "success": True,
+        "message": "Finansal skor başarıyla hesaplandı.",
+        "data": result
+    }
+
+class ConsolidatedRequest(BaseModel):
+    firm_ids: list[int]
+
+@router.post("/consolidated")
+async def generate_consolidated_report(
+    request: ConsolidatedRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    O1 Bonus: Birden fazla firmanın verilerini toplayarak birleştirilmiş bir analiz üretir (Holding Raporu).
+    """
+    # Konsolide rapor premium kullanıcılara veya adminlere açıktır
+    if not current_user.is_admin and not current_user.is_premium_active:
+        raise HTTPException(status_code=403, detail="Konsolide raporlama Premium özelliktir.")
+        
+    result = await db.execute(select(Firm).filter(Firm.id.in_(request.firm_ids)))
+    firms = result.scalars().all()
+    
+    if not firms:
+        raise HTTPException(status_code=404, detail="Firmalar bulunamadı.")
+        
+    total_revenue = sum([firm.estimated_revenue for firm in firms if firm.estimated_revenue])
+    holding_name = " & ".join([firm.name for firm in firms])
+    
+    consolidated_data = {
+        "holding_name": holding_name,
+        "total_revenue": total_revenue,
+        "firm_count": len(firms),
+        "activities": list(set([firm.field_of_activity for firm in firms if firm.field_of_activity]))
+    }
+    
+    # Gerçek projede bu konsolide veriler Yapay Zekaya (Gemini) gönderilir
+    consolidated_analysis = {
+        "summary": f"{len(firms)} farklı şirketten oluşan bu holdingin toplam cirosu {total_revenue} TL'dir.",
+        "synergy_potential": "Şirketler arası maliyet düşürme ve çapraz satış fırsatları yüksek.",
+        "risk": "Farklı sektörlerde faaliyet gösterilmesi riski dağıtsa da operasyonel karmaşayı artırabilir."
+    }
+    
+    return {
+        "success": True,
+        "holding_data": consolidated_data,
+        "analysis": consolidated_analysis
+    }
