@@ -8,6 +8,7 @@ from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, Token
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.core.config import settings
+from app.services.log_service import create_log # Log servisimizi import ettik
 from datetime import timedelta
 
 router = APIRouter()
@@ -35,11 +36,17 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     result = await db.execute(select(User).filter(User.email == form_data.username))
     user = result.scalars().first()
     if not user or not verify_password(form_data.password, user.hashed_password):
+        # T9: Başarısız Giriş Denemesi Logu
+        await create_log(db, "LOGIN_FAILED", {"email": form_data.username, "reason": "Hatalı şifre veya e-posta"})
+        
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    # T9: Başarılı Giriş Logu
+    await create_log(db, "LOGIN_SUCCESS", {"email": user.email, "message": "Başarılı giriş."}, user_id=user.id)
     
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     # Token'ın içine kullanıcının rollerini de ekliyoruz (RBAC)
