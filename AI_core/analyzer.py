@@ -31,17 +31,21 @@ async def generate_financial_analysis(financial_data: dict, is_premium: bool = F
             prompt += "\n\nDİKKAT: is_premium durumu Pasif. 'recommendations' kısmında sadece standart temel öneriler ver. Derin analizden kaçın."
 
         response = await client.chat.completions.create(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": prompt}
+                {"role": "user", "content": prompt}
             ],
             max_tokens=1500,
             temperature=0.3
         )
         
         content = response.choices[0].message.content
-        return json.loads(content)
+        content = content.strip()
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"): content = content[4:]
+        return json.loads(content.strip())
 
     except Exception as e:
         print(f"[AI_core.analyzer] Analiz üretim hatası: {e}")
@@ -62,9 +66,9 @@ async def generate_pptx_summary(financial_data: dict) -> str:
         prompt = PPTX_SUMMARY_PROMPT.replace("{financial_data}", data_str)
         
         response = await client.chat.completions.create(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             messages=[
-                {"role": "system", "content": prompt}
+                {"role": "user", "content": prompt}
             ],
             max_tokens=250,
             temperature=0.4
@@ -86,17 +90,21 @@ async def generate_consolidated_analysis(holding_data: dict) -> dict:
         prompt = CONSOLIDATED_ANALYSIS_PROMPT.replace("{holding_data}", data_str)
         
         response = await client.chat.completions.create(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": prompt}
+                {"role": "user", "content": prompt}
             ],
             max_tokens=800,
             temperature=0.4
         )
         
         content = response.choices[0].message.content
-        return json.loads(content)
+        content = content.strip()
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"): content = content[4:]
+        return json.loads(content.strip())
 
     except Exception as e:
         print(f"[AI_core.analyzer] Konsolide analiz hatası: {e}")

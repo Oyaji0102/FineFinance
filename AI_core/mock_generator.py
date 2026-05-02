@@ -15,17 +15,23 @@ async def generate_mock_firm(sector: str, size: str) -> dict:
         prompt = MOCK_FIRM_DATA_PROMPT.replace("{sector}", sector).replace("{size}", size)
         
         response = await client.chat.completions.create(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": prompt}
+                {"role": "user", "content": prompt}
             ],
             max_tokens=1500,
             temperature=0.7 # Biraz daha yaratıcı (farklı şirketler çıkması için)
         )
         
         content = response.choices[0].message.content
-        return json.loads(content)
+        # Gemini bazen JSON'u ```json ... ``` içine sarar, temizliyoruz
+        content = content.strip()
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"):
+                content = content[4:]
+        return json.loads(content.strip())
 
     except Exception as e:
         print(f"[AI_core.mock_generator] Mock data üretim hatası: {e}")

@@ -21,17 +21,13 @@ async def parse_firm_document(file_bytes: bytes, mime_type: str = "image/jpeg") 
         
         # GPT-4o'nun JSON Mode özelliğini kullanarak kesin JSON garantisi alıyoruz
         response = await client.chat.completions.create(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             response_format={ "type": "json_object" },
             messages=[
                 {
-                    "role": "system",
-                    "content": EXTRACT_FIRM_PROMPT
-                },
-                {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "Lütfen bu belgeden firma bilgilerini çıkar:"},
+                        {"type": "text", "text": EXTRACT_FIRM_PROMPT + "\nLütfen bu belgeden firma bilgilerini çıkar:"},
                         {
                             "type": "image_url",
                             "image_url": {
@@ -62,16 +58,12 @@ async def parse_firm_text(ocr_text: str) -> dict:
     """
     try:
         response = await client.chat.completions.create(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             response_format={ "type": "json_object" },
             messages=[
                 {
-                    "role": "system",
-                    "content": EXTRACT_FIRM_PROMPT
-                },
-                {
                     "role": "user",
-                    "content": f"İşte OCR metni:\n{ocr_text}"
+                    "content": EXTRACT_FIRM_PROMPT + f"\nİşte OCR metni:\n{ocr_text}"
                 }
             ],
             max_tokens=1024,
@@ -79,7 +71,11 @@ async def parse_firm_text(ocr_text: str) -> dict:
         )
         
         content = response.choices[0].message.content
-        data = json.loads(content)
+        content = content.strip()
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"): content = content[4:]
+        data = json.loads(content.strip())
         return data
         
     except Exception as e:
