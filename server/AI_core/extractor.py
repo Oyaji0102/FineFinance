@@ -42,7 +42,7 @@ async def parse_firm_document(file_path: str, mime_type: str = "image/jpeg") -> 
         # 2. Gemini ile içerik üret (JSON zorunlu)
         response = await asyncio.to_thread(
             client.models.generate_content,
-            model="gemini-2.5-flash",
+            model="gemini-3-flash-preview",
             contents=[
                 EXTRACT_FIRM_PROMPT + "\nLütfen bu belgeden finansal ve şirket bilgilerini çıkar:",
                 uploaded_file
@@ -59,7 +59,7 @@ async def parse_firm_document(file_path: str, mime_type: str = "image/jpeg") -> 
 
     except Exception as e:
         print(f"[extractor] HATA: {e}")
-        return {}
+        return {"error": str(e)}
     finally:
         if uploaded_file:
             try:
@@ -74,7 +74,7 @@ async def parse_firm_text(ocr_text: str) -> dict:
     try:
         response = await asyncio.to_thread(
             client.models.generate_content,
-            model="gemini-2.5-flash-lite",
+            model="gemini-3-flash-preview",
             contents=EXTRACT_FIRM_PROMPT + f"\nİşte metin verisi:\n{ocr_text}",
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",

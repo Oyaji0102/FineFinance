@@ -8,6 +8,7 @@ import UserLayout from './layouts/UserLayout';
 
 // Pages
 import Login from './pages/Login';
+import SignUp from './pages/SignUp';
 
 function App() {
   const { user } = useAuth();
@@ -15,6 +16,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<SignUp />} />
       
       {/* Admin Routes */}
       <Route path="/admin/*" element={

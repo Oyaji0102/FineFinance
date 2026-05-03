@@ -18,9 +18,9 @@ router = APIRouter()
 async def create_firm(
     firm_in: FirmCreate, 
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_admin_user)
 ):
-    # Kullanıcının eklediği firma varsayılan olarak admin onayına düşer (is_approved=False)
+    # Firma oluşturma sadece admin kullanıcılar tarafından yapılabilir.
     db_firm = Firm(**firm_in.model_dump())
     db.add(db_firm)
     await db.commit()
@@ -92,6 +92,38 @@ async def delete_firm(
     await db.delete(db_firm)
     await db.commit()
     return None
+
+@router.post("/{firm_id}/approve", response_model=FirmResponse)
+async def approve_firm(
+    firm_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    result = await db.execute(select(Firm).filter(Firm.id == firm_id))
+    db_firm = result.scalars().first()
+    if not db_firm:
+        raise HTTPException(status_code=404, detail="Firma bulunamadı")
+    db_firm.is_approved = True
+    db.add(db_firm)
+    await db.commit()
+    await db.refresh(db_firm)
+    return db_firm
+
+@router.post("/{firm_id}/reject", response_model=FirmResponse)
+async def reject_firm(
+    firm_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    result = await db.execute(select(Firm).filter(Firm.id == firm_id))
+    db_firm = result.scalars().first()
+    if not db_firm:
+        raise HTTPException(status_code=404, detail="Firma bulunamadı")
+    db_firm.is_approved = False
+    db.add(db_firm)
+    await db.commit()
+    await db.refresh(db_firm)
+    return db_firm
 
 @router.get("/export/csv")
 async def export_firms_csv(

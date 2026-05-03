@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Building2, LayoutDashboard, LineChart, FileText, Settings as SettingsIcon, LogOut, Sun, Moon } from 'lucide-react';
+import { Building2, LayoutDashboard, LineChart, FileText, Settings as SettingsIcon, LogOut, Sun, Moon, Activity } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Dashboard from '../pages/admin/Dashboard';
@@ -8,12 +8,14 @@ import Firms from '../pages/admin/Firms';
 import Reports from '../pages/admin/Reports';
 import Investments from '../pages/admin/Investments';
 import Settings from '../pages/admin/Settings';
+import Logs from '../pages/admin/Logs';
 
 const menuItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/admin/firms', label: 'Firmalar', icon: Building2 },
   { path: '/admin/reports', label: 'Finansal Raporlar', icon: FileText },
   { path: '/admin/investments', label: 'Yatırım', icon: LineChart },
+  { path: '/admin/logs', label: 'Sistem Logları', icon: Activity },
   { path: '/admin/settings', label: 'Mali Yapımız', icon: SettingsIcon },
 ];
 
@@ -81,6 +83,7 @@ export default function AdminLayout() {
             <Route path="/firms" element={<Firms />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/investments" element={<Investments />} />
+            <Route path="/logs" element={<Logs />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </div>

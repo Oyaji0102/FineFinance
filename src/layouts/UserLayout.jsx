@@ -1,20 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { User, FileText, LogOut, Sun, Moon, Lock } from 'lucide-react';
+import { User, FileText, LogOut, Sun, Moon, Lock, Crown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { api } from '../services/api';
 import FirmProfile from '../pages/user/FirmProfile';
 import UserReport from '../pages/user/UserReport';
+import Membership from '../pages/user/Membership';
 
 const menuItems = [
   { path: '/user', label: 'Firma Bilgileri', icon: User },
   { path: '/user/report', label: 'Finansal Rapor', icon: FileText },
+  { path: '/user/membership', label: 'Üyelik', icon: Crown },
 ];
 
 export default function UserLayout() {
   const { logout, user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
+  const [membershipPlan, setMembershipPlan] = useState('free');
+
+  useEffect(() => {
+    const fetchMembership = async () => {
+      try {
+        const membership = await api.getUserMembership();
+        setMembershipPlan(membership.plan_type);
+      } catch (err) {
+        console.error('Membership could not be loaded:', err);
+      }
+    };
+    
+    if (user) {
+      fetchMembership();
+    }
+  }, [user]);
 
   return (
     <div className="layout-wrapper">
@@ -42,10 +61,12 @@ export default function UserLayout() {
             })}
             
             {/* Locked feature preview */}
-            <div className="nav-item mt-2" style={{ border: '1px dashed var(--warning)', opacity: 0.8, cursor: 'not-allowed', backgroundColor: 'rgba(245, 158, 11, 0.05)' }} title="Premium Özellik">
-              <Lock size={18} className="mr-2" style={{ color: 'var(--warning)' }} />
-              Yapay Zeka Analizi
-            </div>
+            {membershipPlan === 'free' && (
+              <div className="nav-item mt-2" style={{ border: '1px dashed var(--warning)', opacity: 0.8, cursor: 'not-allowed', backgroundColor: 'rgba(245, 158, 11, 0.05)' }} title="Premium Özellik">
+                <Lock size={18} className="mr-2" style={{ color: 'var(--warning)' }} />
+                Yapay Zeka Analizi
+              </div>
+            )}
           </nav>
         </div>
         
@@ -56,7 +77,11 @@ export default function UserLayout() {
             </div>
             <div className="flex flex-col overflow-hidden">
               <span className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{user?.name || 'Müşteri'}</span>
-              <span className="text-xs text-muted truncate">Standart Paket</span>
+              <span className="text-xs text-muted truncate">
+                {membershipPlan === 'free' && 'Standart Paket'}
+                {membershipPlan === 'basic' && 'Basic Paket'}
+                {membershipPlan === 'premium' && 'Premium Paket'}
+              </span>
             </div>
           </div>
           
@@ -78,6 +103,7 @@ export default function UserLayout() {
           <Routes>
             <Route path="/" element={<FirmProfile />} />
             <Route path="/report" element={<UserReport />} />
+            <Route path="/membership" element={<Membership />} />
           </Routes>
         </div>
       </main>

@@ -24,7 +24,7 @@ async def generate_financial_analysis(financial_data: dict, is_premium: bool = F
 
         response = await asyncio.to_thread(
             client.models.generate_content,
-            model="gemini-2.5-flash-lite",
+            model="gemini-3-flash-preview",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -54,7 +54,7 @@ async def generate_pptx_summary(financial_data: dict) -> str:
         
         response = await asyncio.to_thread(
             client.models.generate_content,
-            model="gemini-2.5-flash-lite",
+            model="gemini-3-flash-preview",
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.4,
@@ -78,7 +78,7 @@ async def generate_consolidated_analysis(holding_data: dict) -> dict:
         
         response = await asyncio.to_thread(
             client.models.generate_content,
-            model="gemini-2.5-flash-lite",
+            model="gemini-3-flash-preview",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",

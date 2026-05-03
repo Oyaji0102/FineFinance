@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ShieldAlert, User as UserIcon, ArrowRight, Activity, CheckCircle2, FileText, Lock, LayoutDashboard, Database } from 'lucide-react';
@@ -107,7 +107,7 @@ export default function Landing() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <button onClick={() => setShowLoginModal(true)} className="nav-btn">Login</button>
-            <button onClick={() => setShowLoginModal(true)} className="nav-btn-solid">Get Started</button>
+            <button onClick={() => navigate('/signup')} className="nav-btn-solid">Get Started</button>
           </div>
         </nav>
 

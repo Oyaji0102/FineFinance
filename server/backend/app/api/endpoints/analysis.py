@@ -104,6 +104,12 @@ async def parse_document(
                 os.remove(csv_path)
         except: pass
 
+    if parsed_data and "error" in parsed_data:
+        raise HTTPException(
+            status_code=422,
+            detail=f"AI Analiz Hatası: {parsed_data['error']}"
+        )
+
     if not parsed_data:
         raise HTTPException(
             status_code=422,

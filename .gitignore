@@ -15,7 +15,6 @@ dist-ssr
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-!.vscode/settings.json
 .idea
 .DS_Store
 *.suo
@@ -23,30 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.egg-info/
-
-# Virtual environment - push edilmez, pip install ile kurulur
-server/backend/venv/
-venv/
-.venv/
-env/
-
-# Güvenlik - API anahtarları ve şifreler push edilmez!
-server/backend/.env
-.env
-*.env
-
-# Veritabanı dosyaları - push edilmez
-*.db
-*.sqlite
-*.sqlite3
-
-# Geçici test dosyaları
-temp_test.csv
-server/backend/test_extraction.py

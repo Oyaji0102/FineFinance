@@ -115,5 +115,120 @@ export const api = {
     const blob = await res.blob();
     const downloadUrl = URL.createObjectURL(blob);
     return { success: true, downloadUrl };
+  },
+
+  // --- LOGLAR (ADMIN) ---
+  getLogs: async (actionType = null, limit = 100, offset = 0) => {
+    let url = `${BASE_URL}/system/logs?limit=${limit}&offset=${offset}`;
+    if (actionType) url += `&action_type=${actionType}`;
+    
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error("Loglar alınamadı");
+    return res.json();
+  },
+
+  getLogStats: async () => {
+    const res = await fetch(`${BASE_URL}/system/logs/stats`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error("Log istatistikleri alınamadı");
+    return res.json();
+  },
+
+  // --- FİNANSAL RAPORLAR ---
+  getFirmReports: async (firmId) => {
+    const res = await fetch(`${BASE_URL}/reports/reports/firm/${firmId}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error("Raporlar alınamadı");
+    return res.json();
+  },
+
+  uploadFinancialReport: async (firmId, file, extractedData = {}) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('access_token');
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${BASE_URL}/analysis/document/parse`, {
+      method: 'POST',
+      headers,
+      body: formData
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Dosya okunamadı");
+    }
+
+    const parseData = await res.json();
+    
+    // Şimdi report veritabanına ekle
+    const reportData = {
+      firm_id: firmId,
+      file_name: file.name,
+      file_type: file.type,
+      current_assets: parseData.data?.current_assets || 0,
+      total_liabilities: parseData.data?.total_liabilities || 0,
+      net_income: parseData.data?.net_income || 0,
+      estimated_revenue: parseData.data?.estimated_revenue || 0,
+      extracted_data: parseData.data || {},
+      ai_analysis: parseData.analysis || null,
+      financial_score: parseData.score || null
+    };
+
+    const createRes = await fetch(`${BASE_URL}/reports/reports`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(reportData)
+    });
+
+    if (!createRes.ok) {
+      const err = await createRes.json();
+      throw new Error(err.detail || "Rapor kaydedilemedi");
+    }
+
+    return createRes.json();
+  },
+
+  deleteReport: async (reportId) => {
+    const res = await fetch(`${BASE_URL}/reports/reports/${reportId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) throw new Error("Rapor silinemedi");
+    return res.json();
+  },
+
+  // --- ÜYELİK (MEMBERSHIP) ---
+  getMembershipPlans: async () => {
+    const res = await fetch(`${BASE_URL}/membership/plans`);
+    if (!res.ok) throw new Error("Planlar alınamadı");
+    return res.json();
+  },
+
+  getUserMembership: async () => {
+    const res = await fetch(`${BASE_URL}/membership/membership`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error("Üyelik bilgisi alınamadı");
+    return res.json();
+  },
+
+  upgradeMembership: async (planType, billingPeriod = 'monthly') => {
+    const res = await fetch(
+      `${BASE_URL}/membership/membership/upgrade?plan_type=${planType}&billing_period=${billingPeriod}`,
+      {
+        method: 'POST',
+        headers: getAuthHeaders()
+      }
+    );
+    if (!res.ok) throw new Error("Üyelik güncellenemedi");
+    return res.json();
+  },
+
+  downgradeMembership: async () => {
+    const res = await fetch(`${BASE_URL}/membership/membership/downgrade`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) throw new Error("Üyelik indirilemedi");
+    return res.json();
   }
 };
